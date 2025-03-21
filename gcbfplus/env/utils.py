@@ -224,3 +224,60 @@ def get_node_goal_rng(
         cond_fun=reset_not_terminate, body_fun=reset_body, init_val=(0, key, states, goals))
 
     return states, goals
+
+def get_node_goal_circle(
+        side_length: float,
+        n: int,
+        circle_radius: float
+) -> [Pos, Pos]:
+    states = np.zeros((n, 2))
+    goals = np.zeros((n, 2))
+
+    for i in range(n):
+        states[i,:] = np.array([0.5 * side_length + circle_radius * np.cos(i * 2 * np.pi / n),
+                       0.5 * side_length + circle_radius * np.sin(i * 2 * np.pi / n)])
+        goals[i,:] = np.array([0.5 * side_length - circle_radius * np.cos(i * 2 * np.pi / n),
+                       0.5 * side_length - circle_radius * np.sin(i * 2 * np.pi / n)])
+
+    states = jnp.array(states)
+    goals = jnp.array(goals)
+
+    return states, goals
+
+def get_node_goal_maze_sparse(
+        n: int
+) -> [Pos, Pos]:
+    states = np.zeros((n, 2))
+    goals = np.zeros((n, 2))
+
+    for i in range(n):
+        if i < 5:
+            states[i,:] = np.array([0.5,  2.5 + (i-2) * 0.25])
+            goals[i,:] = np.array([4.5, 2.5 - (i-2) * 0.25])
+        else:
+            states[i,:] = np.array([4.5, 2.5 + (i-7) * 0.25])
+            goals[i,:] = np.array([0.5, 2.5 - (i-7) * 0.25])
+
+    states = jnp.array(states)
+    goals = jnp.array(goals)
+
+    return states, goals
+
+def get_node_goal_maze_dense(
+        n: int
+) -> [Pos, Pos]:
+    states = np.zeros((n, 2))
+    goals = np.zeros((n, 2))
+
+    for i in range(n):
+        if i < 5:
+            states[i,:] = np.array([0.5,  2.5 + (i-2) * 0.25])
+            goals[i,:] = np.array([3.5, 2.5 - (i-2) * 0.25])
+        else:
+            states[i,:] = np.array([3.5, 2.5 + (i-7) * 0.25])
+            goals[i,:] = np.array([0.5, 2.5 - (i-7) * 0.25])
+
+    states = jnp.array(states)
+    goals = jnp.array(goals)
+
+    return states, goals

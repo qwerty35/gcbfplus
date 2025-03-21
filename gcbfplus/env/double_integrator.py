@@ -4,6 +4,7 @@ import jax
 import jax.numpy as jnp
 import jax.random as jr
 import numpy as np
+import csv
 
 from typing import NamedTuple, Tuple, Optional
 
@@ -13,7 +14,7 @@ from ..utils.utils import merge01, jax_vmap
 from .base import MultiAgentEnv, RolloutResult
 from .obstacle import Obstacle, Rectangle
 from .plot import render_video
-from .utils import get_lidar, inside_obstacles, lqr, get_node_goal_rng
+from .utils import get_lidar, inside_obstacles, lqr, get_node_goal_rng, get_node_goal_circle, get_node_goal_maze_sparse, get_node_goal_maze_dense
 
 
 class DoubleIntegrator(MultiAgentEnv):
@@ -33,10 +34,10 @@ class DoubleIntegrator(MultiAgentEnv):
     EnvGraphsTuple = GraphsTuple[State, EnvState]
 
     PARAMS = {
-        "car_radius": 0.05,
+        "car_radius": 0.075,
         "comm_radius": 0.5,
         "n_rays": 32,
-        "obs_len_range": [0.1, 0.5],
+        "obs_len_range": [0.25, 0.25],
         "n_obs": 8,
         "m": 0.1,  # mass
     }
@@ -83,25 +84,125 @@ class DoubleIntegrator(MultiAgentEnv):
     def reset(self, key: Array) -> GraphsTuple:
         self._t = 0
 
-        # randomly generate obstacles
-        n_rng_obs = self._params["n_obs"]
-        assert n_rng_obs >= 0
-        obstacle_key, key = jr.split(key, 2)
-        obs_pos = jr.uniform(obstacle_key, (n_rng_obs, 2), minval=0, maxval=self.area_size)
+        # Forest
+        map_path = "/home/jungwon/gcbfplus/map/forest/forest1.csv"
+        with open(map_path, newline='') as map_csv:
+            reader = csv.reader(map_csv, delimiter=' ', quotechar='|')
+            n_obs = sum(1 for row in reader)
+
+        with open(map_path, newline='') as map_csv:
+            reader = csv.reader(map_csv, delimiter=',')
+            obs_pos = np.zeros((n_obs, 2))
+            i = 0
+            for row in reader:
+                obs_pos[i,:] = np.array([0.5 * (self.area_size + float(row[0])),
+                                         0.5 * (self.area_size + float(row[1]))])
+                i += 1
+            obs_pos = jnp.array(obs_pos)
+
         length_key, key = jr.split(key, 2)
         obs_len = jr.uniform(
             length_key,
-            (n_rng_obs, 2),
-            minval=self._params["obs_len_range"][0],
-            maxval=self._params["obs_len_range"][1],
+            (n_obs, 2),
+            minval=0.25,
+            maxval=0.25,
         )
-        theta_key, key = jr.split(key, 2)
-        obs_theta = jr.uniform(theta_key, (n_rng_obs,), minval=0, maxval=2 * np.pi)
+
+        obs_theta = jnp.zeros(n_obs)
         obstacles = self.create_obstacles(obs_pos, obs_len[:, 0], obs_len[:, 1], obs_theta)
 
+        # # Maze_sparse
+        # n_obs = 0
+        # map_path = "/home/jungwon/gcbfplus/map/maze_sparse/maze30.csv"
+        # with open(map_path, newline='') as map_csv:
+        #     reader = csv.reader(map_csv, delimiter=',')
+        #     obs_pos = np.empty((0, 2))
+        #     for row in reader:
+        #         obs_pos = np.append(obs_pos, np.array([[1.15 + 0.5 * float(row[0]),
+        #                                                 1.00 + 0.5 * float(row[1])]]), axis = 0)
+        #         n_obs += 1
+        #
+        #     for i in range(15):
+        #         obs_pos = np.append(obs_pos, np.array([[0.5 * i,
+        #                                                 0.65]]), axis=0)
+        #         obs_pos = np.append(obs_pos, np.array([[0.5 * i,
+        #                                                 2.0 + 2.05]]), axis=0)
+        #         n_obs += 2
+        #     obs_pos = jnp.array(obs_pos)
+        #
+        # length_key, key = jr.split(key, 2)
+        # obs_len = jr.uniform(
+        #     length_key,
+        #     (n_obs, 2),
+        #     minval=0.5,
+        #     maxval=0.5,
+        # )
+        #
+        # obs_theta = jnp.zeros(n_obs)
+        # obstacles = self.create_obstacles(obs_pos, obs_len[:, 0], obs_len[:, 1], obs_theta)
+
+        # # Maze_dense
+        # n_obs = 0
+        # map_path = "/home/jungwon/gcbfplus/map/maze_dense/maze30.csv"
+        # with open(map_path, newline='') as map_csv:
+        #     reader = csv.reader(map_csv, delimiter=',')
+        #     obs_pos = np.empty((0, 2))
+        #     for row in reader:
+        #         obs_pos = np.append(obs_pos, np.array([[1.0 + 0.5 * float(row[0]),
+        #                                               1.5 + 0.5 * float(row[1])]]), axis = 0)
+        #         n_obs += 1
+        #
+        #     for i in range(30):
+        #         obs_pos = np.append(obs_pos, np.array([[0.25 * i,
+        #                                                 1.5 - 0.25]]), axis=0)
+        #         obs_pos = np.append(obs_pos, np.array([[0.25 * i,
+        #                                                 1.5 + 2.25]]), axis=0)
+        #         n_obs += 2
+        #     obs_pos = jnp.array(obs_pos)
+        #
+        #
+        # length_key, key = jr.split(key, 2)
+        # obs_len = jr.uniform(
+        #     length_key,
+        #     (n_obs, 2),
+        #     minval=0.25,
+        #     maxval=0.25,
+        # )
+        #
+        # obs_theta = jnp.zeros(n_obs)
+        # obstacles = self.create_obstacles(obs_pos, obs_len[:, 0], obs_len[:, 1], obs_theta)
+
+        # # Original
+        # # randomly generate obstacles
+        # n_rng_obs = self._params["n_obs"]
+        # assert n_rng_obs >= 0
+        # obstacle_key, key = jr.split(key, 2)
+        # obs_pos = jr.uniform(obstacle_key, (n_rng_obs, 2), minval=0, maxval=self.area_size)
+        # length_key, key = jr.split(key, 2)
+        # obs_len = jr.uniform(
+        #     length_key,
+        #     (n_rng_obs, 2),
+        #     minval=self._params["obs_len_range"][0],
+        #     maxval=self._params["obs_len_range"][1],
+        # )
+        # theta_key, key = jr.split(key, 2)
+        # # obs_theta = jr.uniform(theta_key, (n_rng_obs,), minval=0, maxval=2 * np.pi)
+        # obs_theta = jr.uniform(theta_key, (n_rng_obs,), minval=0, maxval=0)
+        # obstacles = self.create_obstacles(obs_pos, obs_len[:, 0], obs_len[:, 1], obs_theta)
+
         # randomly generate agent and goal
-        states, goals = get_node_goal_rng(
-            key, self.area_size, 2, obstacles, self.num_agents, 4 * self.params["car_radius"], self.max_travel)
+        # states, goals = get_node_goal_rng(
+        #     key, self.area_size, 2, obstacles, self.num_agents, 4 * self.params["car_radius"], self.max_travel)
+
+        # Forest
+        states, goals = get_node_goal_circle(
+            self.area_size, self.num_agents, 2)
+
+        # # Maze_sparse
+        # states, goals = get_node_goal_maze_sparse(self.num_agents)
+
+        # # Maze_dense
+        # states, goals = get_node_goal_maze_dense(self.num_agents)
 
         # add zero velocity
         states = jnp.concatenate([states, jnp.zeros((self.num_agents, 2))], axis=1)

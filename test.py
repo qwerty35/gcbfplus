@@ -10,6 +10,7 @@ import jax.random as jr
 import jax.tree_util as jtu
 import numpy as np
 import yaml
+import time
 
 from gcbfplus.algo import GCBF, GCBFPlus, make_algo, CentralizedCBF, DecShareCBF
 from gcbfplus.env import make_env
@@ -23,6 +24,8 @@ def test(args):
     print(f"> Running test.py {args}")
 
     stamp_str = datetime.datetime.now().strftime("%m%d-%H%M")
+
+    start_time = time.time()
 
     # set up environment variables and seed
     os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "false"
@@ -204,6 +207,10 @@ def test(args):
         f"finish_rate: {finish_mean * 100:.3f}%, "
         f"success_rate: {success_mean * 100:.3f}%"
     )
+
+    end_time = time.time()
+    print(end_time - start_time)
+
 
     # save results
     if args.log:
