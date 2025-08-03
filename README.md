@@ -125,8 +125,19 @@ python test.py --env SingleIntegrator -n 16 --algo dec_share_cbf --epi 1 --area-
 ```
 
 ### Pre-trained models
-
 We provide the pre-trained models in the folder [`pretrained`](pretrained).
+
+### Comparison Test
+1. Install gcbf+ 
+2. Go to ```~/gcbfplus/env/double_integrator.py``` and set the obstacle as you want
+3. Go to terminal and use: 
+```bash
+conda activate gcbfplus
+python test.py --path ~/gcbfplus/pretrained/DoubleIntegrator/gcbf+  --epi 1 --area-size 5 -n 10 --obs 0 --max-step 512
+```
+(This assumes that the gcbf is installed at ```~/gcbfplus```)
+
+(You may need to change the area-size and max-step according to the size of the environment)
 
 ## Acknowledgement
 

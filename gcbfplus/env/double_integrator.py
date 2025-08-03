@@ -110,6 +110,8 @@ class DoubleIntegrator(MultiAgentEnv):
 
         obs_theta = jnp.zeros(n_obs)
         obstacles = self.create_obstacles(obs_pos, obs_len[:, 0], obs_len[:, 1], obs_theta)
+        states, goals = get_node_goal_circle(
+            self.area_size, self.num_agents, 2)
 
         # # Maze_sparse
         # n_obs = 0
@@ -121,7 +123,7 @@ class DoubleIntegrator(MultiAgentEnv):
         #         obs_pos = np.append(obs_pos, np.array([[1.15 + 0.5 * float(row[0]),
         #                                                 1.00 + 0.5 * float(row[1])]]), axis = 0)
         #         n_obs += 1
-        #
+        
         #     for i in range(15):
         #         obs_pos = np.append(obs_pos, np.array([[0.5 * i,
         #                                                 0.65]]), axis=0)
@@ -129,7 +131,7 @@ class DoubleIntegrator(MultiAgentEnv):
         #                                                 2.0 + 2.05]]), axis=0)
         #         n_obs += 2
         #     obs_pos = jnp.array(obs_pos)
-        #
+        
         # length_key, key = jr.split(key, 2)
         # obs_len = jr.uniform(
         #     length_key,
@@ -137,9 +139,10 @@ class DoubleIntegrator(MultiAgentEnv):
         #     minval=0.5,
         #     maxval=0.5,
         # )
-        #
+        
         # obs_theta = jnp.zeros(n_obs)
         # obstacles = self.create_obstacles(obs_pos, obs_len[:, 0], obs_len[:, 1], obs_theta)
+        # states, goals = get_node_goal_maze_sparse(self.num_agents)
 
         # # Maze_dense
         # n_obs = 0
@@ -151,7 +154,7 @@ class DoubleIntegrator(MultiAgentEnv):
         #         obs_pos = np.append(obs_pos, np.array([[1.0 + 0.5 * float(row[0]),
         #                                               1.5 + 0.5 * float(row[1])]]), axis = 0)
         #         n_obs += 1
-        #
+        
         #     for i in range(30):
         #         obs_pos = np.append(obs_pos, np.array([[0.25 * i,
         #                                                 1.5 - 0.25]]), axis=0)
@@ -159,8 +162,8 @@ class DoubleIntegrator(MultiAgentEnv):
         #                                                 1.5 + 2.25]]), axis=0)
         #         n_obs += 2
         #     obs_pos = jnp.array(obs_pos)
-        #
-        #
+        
+        
         # length_key, key = jr.split(key, 2)
         # obs_len = jr.uniform(
         #     length_key,
@@ -168,9 +171,10 @@ class DoubleIntegrator(MultiAgentEnv):
         #     minval=0.25,
         #     maxval=0.25,
         # )
-        #
+        
         # obs_theta = jnp.zeros(n_obs)
         # obstacles = self.create_obstacles(obs_pos, obs_len[:, 0], obs_len[:, 1], obs_theta)
+        # states, goals = get_node_goal_maze_dense(self.num_agents)
 
         # # Original
         # # randomly generate obstacles
@@ -193,16 +197,6 @@ class DoubleIntegrator(MultiAgentEnv):
         # randomly generate agent and goal
         # states, goals = get_node_goal_rng(
         #     key, self.area_size, 2, obstacles, self.num_agents, 4 * self.params["car_radius"], self.max_travel)
-
-        # Forest
-        states, goals = get_node_goal_circle(
-            self.area_size, self.num_agents, 2)
-
-        # # Maze_sparse
-        # states, goals = get_node_goal_maze_sparse(self.num_agents)
-
-        # # Maze_dense
-        # states, goals = get_node_goal_maze_dense(self.num_agents)
 
         # add zero velocity
         states = jnp.concatenate([states, jnp.zeros((self.num_agents, 2))], axis=1)
